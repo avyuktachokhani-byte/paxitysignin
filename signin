@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<title>Sign In</title>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;600;700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:       #080c14;
+    --card:     #0e1420;
+    --border:   rgba(255,255,255,0.07);
+    --text:     #f0f4ff;
+    --muted:    #6b7a99;
+    --accent:   #4f8ef7;
+    --accent2:  #7c5cfc;
+    --google:   #ffffff;
+    --danger:   #ff4d6d;
+    --success:  #22c55e;
+    --radius:   16px;
+  }
+
+  html, body {
+    height: 100%;
+    background: var(--bg);
+    font-family: 'DM Sans', sans-serif;
+    color: var(--text);
+    overflow: hidden;
+  }
+
+  /* ─── SCREENS ─── */
+  .screen { display: none; height: 100dvh; flex-direction: column; align-items: center; justify-content: center; padding: 24px; position: relative; overflow: hidden; }
+  .screen.active { display: flex; }
+
+  /* ─── BG GLOW ─── */
+  .glow {
+    position: absolute; border-radius: 50%; filter: blur(90px); pointer-events: none; z-index: 0;
+  }
+  .glow-1 { width: 300px; height: 300px; background: rgba(79,142,247,0.15); top: -80px; left: -60px; }
+  .glow-2 { width: 250px; height: 250px; background: rgba(124,92,252,0.12); bottom: -60px; right: -40px; }
+
+  /* ─── CARD ─── */
+  .card {
+    position: relative; z-index: 1;
+    width: 100%; max-width: 380px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 24px;
+    padding: 36px 28px 32px;
+    box-shadow: 0 32px 80px rgba(0,0,0,0.5);
+    animation: slideUp 0.5s cubic-bezier(.22,.68,0,1.2) both;
+  }
+
+  @keyframes slideUp {
+    from { opacity: 0; transform: translateY(30px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ─── LOGO ─── */
+  .logo-wrap { display: flex; flex-direction: column; align-items: center; margin-bottom: 28px; }
+  .logo-icon {
+    width: 52px; height: 52px; border-radius: 14px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    display: flex; align-items: center; justify-content: center;
+    margin-bottom: 12px;
+    box-shadow: 0 8px 24px rgba(79,142,247,0.35);
+  }
+  .logo-icon svg { width: 26px; height: 26px; }
+  .app-name { font-family: 'Sora', sans-serif; font-size: 20px; font-weight: 700; letter-spacing: -0.5px; }
+  .app-sub  { font-size: 13px; color: var(--muted); margin-top: 3px; }
+
+  /* ─── DIVIDER ─── */
+  .divider { display: flex; align-items: center; gap: 10px; margin: 20px 0; }
+  .divider span { font-size: 12px; color: var(--muted); white-space: nowrap; }
+  .divider::before, .divider::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+  /* ─── OAUTH BUTTONS ─── */
+  .oauth-btn {
+    display: flex; align-items: center; justify-content: center; gap: 10px;
+    width: 100%; padding: 13px 20px;
+    border-radius: var(--radius); border: 1px solid var(--border);
+    background: rgba(255,255,255,0.04);
+    font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 500; color: var(--text);
+    cursor: pointer; transition: background 0.2s, border-color 0.2s, transform 0.15s;
+    margin-bottom: 10px; position: relative;
+  }
+  .oauth-btn:active { transform: scale(0.97); }
+  .oauth-btn:hover { background: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.14); }
+
+  .oauth-btn svg { flex-shrink: 0; }
+  .oauth-btn.google { }
+
+  /* ─── EMAIL FORM ─── */
+  .field { margin-bottom: 14px; }
+  .field label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 6px; letter-spacing: 0.3px; }
+  .field input {
+    width: 100%; padding: 12px 14px;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 14px;
+    outline: none; transition: border-color 0.2s, background 0.2s;
+  }
+  .field input:focus { border-color: var(--accent); background: rgba(79,142,247,0.06); }
+  .field input::placeholder { color: #3a4560; }
+
+  /* ─── PRIMARY BTN ─── */
+  .primary-btn {
+    width: 100%; padding: 13px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border: none; border-radius: var(--radius);
+    color: #fff; font-family: 'Sora', sans-serif; font-size: 14px; font-weight: 600;
+    cursor: pointer; transition: opacity 0.2s, transform 0.15s;
+    margin-top: 6px; letter-spacing: 0.2px;
+    box-shadow: 0 6px 20px rgba(79,142,247,0.3);
+  }
+  .primary-btn:active { transform: scale(0.97); opacity: 0.9; }
+  .primary-btn:hover  { opacity: 0.92; }
+
+  /* ─── TOGGLE ─── */
+  .toggle-row { text-align: center; margin-top: 18px; font-size: 13px; color: var(--muted); }
+  .toggle-row a { color: var(--accent); cursor: pointer; font-weight: 500; text-decoration: none; }
+
+  /* ─── MSG ─── */
+  .msg { font-size: 12px; margin-top: 12px; padding: 10px 14px; border-radius: 10px; display: none; }
+  .msg.error   { background: rgba(255,77,109,0.12); color: var(--danger); display: block; }
+  .msg.success { background: rgba(34,197,94,0.12); color: var(--success); display: block; }
+
+  /* ─── NEXT PAGE ─── */
+  #page-next { background: linear-gradient(160deg, #08101e 0%, #0c1628 100%); }
+  .next-card {
+    position: relative; z-index: 1;
+    width: 100%; max-width: 380px;
+    text-align: center;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 24px;
+    padding: 44px 28px 40px;
+    box-shadow: 0 32px 80px rgba(0,0,0,0.5);
+    animation: slideUp 0.5s cubic-bezier(.22,.68,0,1.2) both;
+  }
+  .check-circle {
+    width: 64px; height: 64px; border-radius: 50%;
+    background: linear-gradient(135deg, #22c55e, #16a34a);
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 20px;
+    box-shadow: 0 8px 24px rgba(34,197,94,0.35);
+  }
+  .check-circle svg { width: 30px; height: 30px; }
+  .next-card h2 { font-family: 'Sora', sans-serif; font-size: 22px; font-weight: 700; margin-bottom: 8px; }
+  .next-card p  { font-size: 14px; color: var(--muted); margin-bottom: 28px; line-height: 1.6; }
+  .user-badge {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: rgba(255,255,255,0.05); border: 1px solid var(--border);
+    border-radius: 100px; padding: 8px 16px;
+    font-size: 13px; color: var(--text); margin-bottom: 28px;
+  }
+  .user-badge .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--success); }
+
+  .continue-btn {
+    width: 100%; padding: 13px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border: none; border-radius: var(--radius);
+    color: #fff; font-family: 'Sora', sans-serif; font-size: 14px; font-weight: 600;
+    cursor: pointer; transition: opacity 0.2s, transform 0.15s;
+    box-shadow: 0 6px 20px rgba(79,142,247,0.3);
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+  }
+  .continue-btn:active { transform: scale(0.97); }
+  .continue-btn:hover  { opacity: 0.9; }
+
+  /* ─── SPINNER ─── */
+  .spinner {
+    width: 16px; height: 16px; border-radius: 50%;
+    border: 2px solid rgba(255,255,255,0.3);
+    border-top-color: #fff;
+    animation: spin 0.7s linear infinite; display: none;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ─── LOADING OVERLAY ─── */
+  #loading-overlay {
+    position: fixed; inset: 0; background: var(--bg);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 999; transition: opacity 0.4s;
+  }
+  .load-dots { display: flex; gap: 8px; }
+  .load-dots span {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--accent); animation: bounce 1s ease infinite;
+  }
+  .load-dots span:nth-child(2) { animation-delay: 0.15s; background: var(--accent2); }
+  .load-dots span:nth-child(3) { animation-delay: 0.3s; }
+  @keyframes bounce { 0%,60%,100%{transform:translateY(0)} 30%{transform:translateY(-10px)} }
+</style>
+</head>
+<body>
+
+<!-- Loading Overlay -->
+<div id="loading-overlay"><div class="load-dots"><span></span><span></span><span></span></div></div>
+
+<!-- ══════════════ PAGE 1 — SIGN IN ══════════════ -->
+<div id="page-signin" class="screen">
+  <div class="glow glow-1"></div>
+  <div class="glow glow-2"></div>
+
+  <div class="card" id="card-signin">
+    <div class="logo-wrap">
+      <div class="logo-icon">
+        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M12 2L3 7v10l9 5 9-5V7L12 2z" stroke="white" stroke-width="1.8" stroke-linejoin="round"/>
+          <circle cx="12" cy="12" r="3" fill="white"/>
+        </svg>
+      </div>
+      <div class="app-name">MyApp</div>
+      <div class="app-sub">Sign in to continue</div>
+    </div>
+
+    <!-- Google -->
+    <button class="oauth-btn google" onclick="signInGoogle()">
+      <svg width="18" height="18" viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
+      Continue with Google
+    </button>
+
+    <div class="divider"><span>or sign in with email</span></div>
+
+    <!-- Email form (sign in) -->
+    <div id="form-signin">
+      <div class="field">
+        <label>Email</label>
+        <input type="email" id="si-email" placeholder="you@example.com" autocomplete="email" />
+      </div>
+      <div class="field">
+        <label>Password</label>
+        <input type="password" id="si-pass" placeholder="••••••••" autocomplete="current-password" />
+      </div>
+      <button class="primary-btn" onclick="signInEmail()">
+        <span id="si-label">Sign In</span>
+        <span class="spinner" id="si-spin"></span>
+      </button>
+    </div>
+
+    <!-- Email form (sign up) -->
+    <div id="form-signup" style="display:none">
+      <div class="field">
+        <label>Full Name</label>
+        <input type="text" id="su-name" placeholder="Jane Doe" />
+      </div>
+      <div class="field">
+        <label>Email</label>
+        <input type="email" id="su-email" placeholder="you@example.com" autocomplete="email" />
+      </div>
+      <div class="field">
+        <label>Password</label>
+        <input type="password" id="su-pass" placeholder="Min. 8 characters" autocomplete="new-password" />
+      </div>
+      <button class="primary-btn" onclick="signUpEmail()">
+        <span id="su-label">Create Account</span>
+        <span class="spinner" id="su-spin"></span>
+      </button>
+    </div>
+
+    <div class="msg" id="msg"></div>
+
+    <div class="toggle-row" id="toggle-row">
+      Don't have an account? <a onclick="toggleMode()">Sign up</a>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════ PAGE 2 — NEXT PAGE ══════════════ -->
+<div id="page-next" class="screen">
+  <div class="glow glow-1"></div>
+  <div class="glow glow-2"></div>
+
+  <div class="next-card">
+    <div class="check-circle">
+      <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M5 13l4 4L19 7" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </div>
+    <h2>You're in! 🎉</h2>
+    <p>Welcome back. You've been signed in successfully.<br>Let's get started.</p>
+
+    <div class="user-badge">
+      <span class="dot"></span>
+      <span id="user-label">Signed in</span>
+    </div>
+
+    <button class="continue-btn" onclick="goToApp()">
+      Go to App
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+    </button>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════════════════
+//  CONFIGURATION — replace with your own values
+// ══════════════════════════════════════════════════
+const SUPABASE_URL    = 'https://YOUR_PROJECT.supabase.co';
+const SUPABASE_ANON   = 'YOUR_ANON_KEY';
+const NEXT_PAGE_URL   = '';   // leave blank to stay on this page (Page 2 shown inline)
+                               // OR set to e.g. 'https://myapp.com/home'
+
+const { createClient } = supabase;
+const sb = createClient(SUPABASE_URL, SUPABASE_ANON);
+
+// ── Helpers ──────────────────────────────────────
+let isSignUp = false;
+
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+function showMsg(text, type='error') {
+  const el = document.getElementById('msg');
+  el.textContent = text;
+  el.className = 'msg ' + type;
+}
+
+function clearMsg() {
+  const el = document.getElementById('msg');
+  el.className = 'msg';
+}
+
+function setLoading(prefix, on) {
+  document.getElementById(prefix + '-label').style.opacity = on ? '0' : '1';
+  document.getElementById(prefix + '-spin').style.display  = on ? 'inline-block' : 'none';
+}
+
+function toggleMode() {
+  isSignUp = !isSignUp;
+  document.getElementById('form-signin').style.display  = isSignUp ? 'none' : 'block';
+  document.getElementById('form-signup').style.display  = isSignUp ? 'block' : 'none';
+  document.getElementById('toggle-row').innerHTML       = isSignUp
+    ? 'Already have an account? <a onclick="toggleMode()">Sign in</a>'
+    : "Don't have an account? <a onclick=\"toggleMode()\">Sign up</a>";
+  clearMsg();
+}
+
+function afterAuth(user) {
+  const email = user?.email || 'your account';
+  document.getElementById('user-label').textContent = email;
+  if (NEXT_PAGE_URL) {
+    window.location.href = NEXT_PAGE_URL;
+  } else {
+    showScreen('page-next');
+  }
+  // MIT App Inventor bridge (AppInventor.setWebViewString)
+  try { window.AppInventor && window.AppInventor.setWebViewString('signed_in:' + email); } catch(e){}
+}
+
+// ── OAuth ─────────────────────────────────────────
+async function signInGoogle() {
+  clearMsg();
+  const { error } = await sb.auth.signInWithOAuth({
+    provider: 'google',
+    options: { redirectTo: window.location.href }
+  });
+  if (error) showMsg(error.message);
+}
+
+// ── Email sign-in ─────────────────────────────────
+async function signInEmail() {
+  clearMsg();
+  const email = document.getElementById('si-email').value.trim();
+  const pass  = document.getElementById('si-pass').value;
+  if (!email || !pass) { showMsg('Please fill in all fields.'); return; }
+  setLoading('si', true);
+  const { data, error } = await sb.auth.signInWithPassword({ email, password: pass });
+  setLoading('si', false);
+  if (error) { showMsg(error.message); return; }
+  afterAuth(data.user);
+}
+
+// ── Email sign-up ─────────────────────────────────
+async function signUpEmail() {
+  clearMsg();
+  const name  = document.getElementById('su-name').value.trim();
+  const email = document.getElementById('su-email').value.trim();
+  const pass  = document.getElementById('su-pass').value;
+  if (!name || !email || !pass) { showMsg('Please fill in all fields.'); return; }
+  if (pass.length < 8) { showMsg('Password must be at least 8 characters.'); return; }
+  setLoading('su', true);
+  const { data, error } = await sb.auth.signUp({
+    email, password: pass,
+    options: { data: { full_name: name } }
+  });
+  setLoading('su', false);
+  if (error) { showMsg(error.message); return; }
+  if (data.user && !data.user.confirmed_at) {
+    showMsg('Check your email to confirm your account!', 'success');
+  } else {
+    afterAuth(data.user);
+  }
+}
+
+// ── Go to App (Page 2 button) ─────────────────────
+function goToApp() {
+  // Replace with your actual destination or MIT AI2 action
+  try { window.AppInventor && window.AppInventor.setWebViewString('navigate:home'); } catch(e){}
+  alert('Navigating to the main app! 🚀\n\nConnect this to your MIT App Inventor WebViewer or update NEXT_PAGE_URL.');
+}
+
+// ── Session restore on load ───────────────────────
+(async () => {
+  const overlay = document.getElementById('loading-overlay');
+  const { data } = await sb.auth.getSession();
+  overlay.style.opacity = '0';
+  setTimeout(() => { overlay.style.display = 'none'; }, 400);
+
+  if (data?.session?.user) {
+    afterAuth(data.session.user);
+  } else {
+    showScreen('page-signin');
+  }
+
+  // Handle OAuth redirect callback
+  sb.auth.onAuthStateChange((event, session) => {
+    if ((event === 'SIGNED_IN') && session?.user) {
+      afterAuth(session.user);
+    }
+  });
+})();
+</script>
+</body>
+</html>
